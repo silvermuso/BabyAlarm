@@ -1,6 +1,8 @@
 package com.babyalarm;
 
-import android.os.Bundle;
+import android.*;
+import android.content.pm.*;
+import android.os.*;
 import android.app.Activity;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
@@ -9,13 +11,11 @@ import android.graphics.Paint;
 import android.media.AudioFormat;
 import android.media.AudioRecord;
 import android.media.MediaRecorder;
-import android.os.AsyncTask;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.view.View.OnClickListener;
-import android.widget.Button;
-import android.widget.ImageView;
+import android.widget.*;
 
 import ca.uol.aig.fftpack.RealDoubleFFT;
 
@@ -46,6 +46,8 @@ public class MainActivity extends Activity implements OnClickListener {
     Canvas canvas;
     Paint paint;
 
+    int RECORD_AUDIO_REQUEST_CODE = 1000;
+
     /**
      * Called when the activity is first created.
      */
@@ -53,6 +55,9 @@ public class MainActivity extends Activity implements OnClickListener {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        permission();   // 권환획득
+
         startStopButton = (Button) findViewById(R.id.StartStopButton);
         startStopButton.setOnClickListener(this);
 
@@ -79,6 +84,11 @@ public class MainActivity extends Activity implements OnClickListener {
                 int bufferSize = AudioRecord.getMinBufferSize(frequency, channelConfiguration, audioEncoding);
                 AudioRecord audioRecord = new AudioRecord(
                         MediaRecorder.AudioSource.MIC, frequency, channelConfiguration, audioEncoding, bufferSize);
+
+                Log.e("bufferSize", String.valueOf(bufferSize));
+                Log.e("frequency", String.valueOf(frequency));
+                Log.e("channelConfiguration", String.valueOf(channelConfiguration));
+                Log.e("audioEncoding", String.valueOf(audioEncoding));
 
                 // short로 이뤄진 배열인 buffer는 원시 PCM 샘플을 AudioRecord 객체에서 받는다.
                 // double로 이뤄진 배열인 toTransform은 같은 데이터를 담지만 double 타입인데, FFT 클래스에서는 double타입이 필요해서이다.
@@ -147,6 +157,31 @@ public class MainActivity extends Activity implements OnClickListener {
             startStopButton.setText("Stop");
             recordTask = new RecordAudio();
             recordTask.execute();
+        }
+    }
+
+    public void permission() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            if (checkSelfPermission(Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
+                requestPermissions(new String[]{
+                        Manifest.permission.RECORD_AUDIO
+                }, RECORD_AUDIO_REQUEST_CODE);
+            }
+        }
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
+        if (requestCode == RECORD_AUDIO_REQUEST_CODE) {
+            for (int i = 0; i < permissions.length; i++) {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                    if (checkSelfPermission(permissions[i]) == PackageManager.PERMISSION_GRANTED) {
+                        Toast.makeText(getApplicationContext(),"1",Toast.LENGTH_SHORT).show();
+                    } else {
+                        Toast.makeText(getApplicationContext(),"2",Toast.LENGTH_SHORT).show();
+                    }
+                }
+            }
         }
     }
 }
